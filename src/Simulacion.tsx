@@ -1,4 +1,5 @@
 import { useState } from "react";
+import './styles.css'; 
 
 // Datos base
 const jugadorasBase = [
