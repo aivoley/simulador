@@ -69,7 +69,8 @@ export default function Simulador() {
       {/* Título y Logo */}
       <div className="titulo">
         <h1>KIWIS</h1>
-        <img src="ruta/a/imagen/kiwi.png" alt="Fruta Kiwi" style={{ width: "50px", height: "50px" }} />
+        <img src="src
+/png-transparent-kiwifruit-kiwi-fruit-s-cartoon-fruit-eye.png" alt="Fruta Kiwi" style={{ width: "50px", height: "50px" }} />
       </div>
 
       {/* Crear Equipo Manual */}
