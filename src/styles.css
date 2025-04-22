@@ -18,21 +18,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   font-size: 2rem;
   margin: 20px;
-}
-
-.titulo img {
-  width: 50px;
-  height: 50px;
-}
-
-/* Crear equipo manual */
-.crear-equipo select {
-  width: 200px;
-  height: 100px;
-  margin-top: 10px;
 }
 
 /* Cancha */
@@ -88,4 +75,3 @@ ul {
 li {
   margin: 5px 0;
 }
-
