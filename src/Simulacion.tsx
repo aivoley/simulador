@@ -1,222 +1,153 @@
-import React, { useState } from "react";
-import styled from "styled-components";
+import { useState } from "react";
 
-// Tipos de datos
-type Jugadora = {
-  nombre: string;
-  posiciones: string[];
-};
-
-type Formacion = Jugadora[];
-
-const jugadorasBase: Jugadora[] = [
-  { nombre: "Lucía", posiciones: ["Armadora"] },
-  { nombre: "Martina", posiciones: ["Punta"] },
-  { nombre: "Sofía", posiciones: ["Central"] },
-  { nombre: "Camila", posiciones: ["Opuesta"] },
-  { nombre: "Valentina", posiciones: ["Central"] },
-  { nombre: "Julieta", posiciones: ["Punta"] },
-  { nombre: "Agustina", posiciones: ["Líbero"] },
-  { nombre: "Emilia", posiciones: ["Armadora"] },
-  { nombre: "Paula", posiciones: ["Punta"] },
-  { nombre: "Renata", posiciones: ["Central"] },
+// Datos base
+const jugadorasBase = [
+  { nombre: "Candela", posiciones: ["Armadora"] },
+  { nombre: "Miranda", posiciones: ["Armadora"] },
+  { nombre: "Florencia", posiciones: ["Central", "Opuesta"] },
+  { nombre: "Abril M.", posiciones: ["Opuesta"] },
+  { nombre: "Micaela", posiciones: ["Punta"] },
+  { nombre: "Milena", posiciones: ["Punta"] },
+  { nombre: "Irina", posiciones: ["Punta", "Central"] },
+  { nombre: "Sol", posiciones: ["Punta"] },
+  { nombre: "Camila", posiciones: ["Central"] },
+  { nombre: "Josefina", posiciones: ["Central"] },
+  { nombre: "Abril S.", posiciones: ["Punta"] },
+  { nombre: "Julieta A", posiciones: ["Punta", "Líbero"] },
+  { nombre: "Julieta S", posiciones: ["Opuesta", "Líbero"] },
+  { nombre: "Carolina", posiciones: ["Punta", "Líbero"] },
+  { nombre: "Flavia", posiciones: ["Punta", "Líbero"] },
+  { nombre: "Agustina", posiciones: ["Punta"] },
 ];
 
-const zonas = ["5", "6", "1", "2", "3", "4"]; // orientación real
-
-const Simulacion: React.FC = () => {
-  const [formacion, setFormacion] = useState<Formacion>(jugadorasBase.slice(0, 6));
-  const [banco, setBanco] = useState(jugadorasBase.slice(6));
+export default function Simulador() {
+  const [formacion, setFormacion] = useState(jugadorasBase.slice(0, 6));
+  const [suplentes, setSuplentes] = useState(jugadorasBase.slice(6));
   const [rotacion, setRotacion] = useState(0);
+  const [setActual, setSetActual] = useState(1);
+  const [setsAnteriores, setSetsAnteriores] = useState<number[][]>([]);
   const [puntosSet, setPuntosSet] = useState<[number, number]>([0, 0]);
   const [historial, setHistorial] = useState<string[]>([]);
-  const [setActual, setSetActual] = useState(1);
-  const [sets, setSets] = useState<[number, number][]>([]);
+  const [motivoGanado, setMotivoGanado] = useState("");
+  const [motivoPerdido, setMotivoPerdido] = useState("");
+  const [jugadoraGanadora, setJugadoraGanadora] = useState<string | null>(null);
+
+  const zonas = [
+    { area: "z1", nombre: "Zona 1" },
+    { area: "z6", nombre: "Zona 6" },
+    { area: "z5", nombre: "Zona 5" },
+    { area: "z4", nombre: "Zona 4" },
+    { area: "z3", nombre: "Zona 3" },
+    { area: "z2", nombre: "Zona 2" },
+  ];
 
   const rotar = () => {
-    const nueva = [...formacion];
-    const orden = [0, 1, 2, 3, 4, 5];
-    const rotada = orden.map((i) => nueva[(i + 5) % 6]);
-    setFormacion(rotada);
-    setRotacion((prev) => (prev + 1) % 6);
+    const nueva = [
+      formacion[5], // 2 → 1
+      formacion[0], // 1 → 6
+      formacion[1], // 6 → 5
+      formacion[2], // 5 → 4
+      formacion[3], // 4 → 3
+      formacion[4], // 3 → 2
+    ];
+    setFormacion(nueva);
+    setRotacion((r) => (r + 1) % 6);
   };
 
-  const cambiarJugadora = (zonaIdx: number, nueva: string) => {
-    const jugadora = banco.find((j) => j.nombre === nueva);
-    if (!jugadora) return;
-    const reemplazada = formacion[zonaIdx];
-    const nuevaFormacion = [...formacion];
-    nuevaFormacion[zonaIdx] = jugadora;
-    setFormacion(nuevaFormacion);
-    setBanco([...banco.filter((j) => j.nombre !== nueva), reemplazada]);
+  const registrarPunto = (resultado: "ganado" | "perdido") => {
+    const descripcion = resultado === "ganado"
+      ? `✔ ${puntosSet[0] + 1}-${puntosSet[1]}: ${motivoGanado} ${jugadoraGanadora ?? ""}`
+      : `❌ ${puntosSet[0]}-${puntosSet[1] + 1}: ${motivoPerdido}`;
+    setHistorial([...historial, descripcion]);
+    if (resultado === "ganado") setPuntosSet([puntosSet[0] + 1, puntosSet[1]]);
+    else setPuntosSet([puntosSet[0], puntosSet[1] + 1]);
+    setMotivoGanado("");
+    setMotivoPerdido("");
+    setJugadoraGanadora(null);
   };
 
-  const agregarPunto = (equipo: number, motivo: string) => {
-    const nuevos = [...puntosSet];
-    nuevos[equipo]++;
-    setPuntosSet(nuevos);
-    setHistorial([...historial, `Equipo ${equipo + 1}: ${motivo}`]);
-  };
-
-  const terminarSet = () => {
-    setSets([...sets, puntosSet]);
-    setPuntosSet([0, 0]);
-    setHistorial([]);
-    setSetActual(setActual + 1);
-  };
-
-  const [nuevoEquipo, setNuevoEquipo] = useState<{ nombre: string; jugadoras: string[] }>({
-    nombre: "",
-    jugadoras: [],
-  });
-
-  const crearEquipo = () => {
-    const nuevas = jugadorasBase.filter((j) => nuevoEquipo.jugadoras.includes(j.nombre));
-    setFormacion(nuevas);
-    setBanco(jugadorasBase.filter((j) => !nuevoEquipo.jugadoras.includes(j.nombre)));
-    setNuevoEquipo({ nombre: "", jugadoras: [] });
-    setPuntosSet([0, 0]);
-    setHistorial([]);
+  const generarRotacion = () => {
+    const mezcladas = [...jugadorasBase].sort(() => 0.5 - Math.random()).slice(0, 6);
+    setFormacion(mezcladas);
     setRotacion(0);
+    setPuntosSet([0, 0]);
+    setHistorial([]);
+  };
+
+  const cambiarJugadora = (zona: number, nueva: string) => {
+    const index = formacion.findIndex(j => j.nombre === nueva);
+    if (index === -1) {
+      const nuevaJugadora = jugadorasBase.find(j => j.nombre === nueva);
+      const nuevaFormacion = [...formacion];
+      if (nuevaJugadora) nuevaFormacion[zona] = nuevaJugadora;
+      setFormacion(nuevaFormacion);
+      // Actualizar suplentes después de cambiar
+      setSuplentes(suplentes.filter(s => s.nombre !== nueva));
+    }
+  };
+
+  const agregarSuplente = (jugadora: string) => {
+    const index = formacion.findIndex(j => j.nombre === jugadora);
+    if (index !== -1) {
+      const jugadoraQueSale = formacion[index];
+      setSuplentes([...suplentes, jugadoraQueSale]);
+      const nuevaFormacion = [...formacion];
+      nuevaFormacion[index] = jugadorasBase.find(j => j.nombre === jugadora) ?? nuevaFormacion[index];
+      setFormacion(nuevaFormacion);
+    }
   };
 
   return (
-    <Container>
-      <Cancha>
+    <div className="container">
+      <div className="cancha">
         {zonas.map((zona, idx) => (
-          <Zona key={zona} area={zona}>
-            <JugadoraCard>
+          <div key={zona.area} className={`zona zona-${zona.area}`}>
+            <div className="jugadora-card">
               <div>{formacion[idx]?.nombre}</div>
               <small>{formacion[idx]?.posiciones.join("/")}</small>
-              <select onChange={(e) => cambiarJugadora(idx, e.target.value)} value="">
-                <option value="">Cambiar</option>
-                {banco.map((j) => (
-                  <option key={j.nombre} value={j.nombre}>
-                    {j.nombre} ({j.posiciones.join("/")})
-                  </option>
-                ))}
-              </select>
-            </JugadoraCard>
-          </Zona>
+            </div>
+          </div>
         ))}
-      </Cancha>
-
-      <Panel>
+      </div>
+      <div className="panel">
         <h2>Set {setActual}</h2>
-        <Marcador>
-          <span>Equipo 1: {puntosSet[0]}</span>
-          <span>Equipo 2: {puntosSet[1]}</span>
-        </Marcador>
-        <button onClick={() => agregarPunto(0, "Ataque")}>+1 Equipo 1 (Ataque)</button>
-        <button onClick={() => agregarPunto(1, "Bloqueo")}>+1 Equipo 2 (Bloqueo)</button>
-        <button onClick={rotar}>Rotar</button>
-        <button onClick={terminarSet}>Terminar Set</button>
-
-        <Historial>
+        <div>Puntaje: {puntosSet[0]} - {puntosSet[1]}</div>
+        <button onClick={rotar}>🔁 Rotar</button>
+        <button onClick={generarRotacion}>🎲 Generar Rotación</button>
+        <div>
+          <h4>Motivo punto ganado</h4>
+          <select value={motivoGanado} onChange={(e) => setMotivoGanado(e.target.value)}>
+            <option value="">Seleccionar</option>
+            {["ACE", "ATAQUE", "BLOQUEO", "TOQUE", "ERROR RIVAL"].map(m => <option key={m}>{m}</option>)}
+          </select>
+          <h4>Motivo punto perdido</h4>
+          <select value={motivoPerdido} onChange={(e) => setMotivoPerdido(e.target.value)}>
+            <option value="">Seleccionar</option>
+            {["ERROR DE SAQUE", "ERROR DE ATAQUE", "BLOQUEO RIVAL", "ERROR NO FORZADO", "ERROR DE RECEPCION", "ATAQUE RIVAL", "SAQUE RIVAL"].map(m => <option key={m}>{m}</option>)}
+          </select>
+          <h4>Jugadora destacada</h4>
+          <select value={jugadoraGanadora ?? ""} onChange={(e) => setJugadoraGanadora(e.target.value)}>
+            <option value="">Ninguna</option>
+            {formacion.map(j => <option key={j.nombre}>{j.nombre}</option>)}
+          </select>
+          <button onClick={() => registrarPunto("ganado")}>✔ Punto Ganado</button>
+          <button onClick={() => registrarPunto("perdido")}>❌ Punto Perdido</button>
+        </div>
+        <div>
           <h3>Historial</h3>
-          <ul>
-            {historial.map((p, i) => (
-              <li key={i}>{p}</li>
-            ))}
-          </ul>
-        </Historial>
-
-        <h3>Sets anteriores</h3>
-        <ul>
-          {sets.map((set, i) => (
-            <li key={i}>Set {i + 1}: {set[0]} - {set[1]}</li>
-          ))}
-        </ul>
-
-        <hr />
-
-        <h3>Crear nuevo equipo</h3>
-        <input
-          type="text"
-          placeholder="Nombre del equipo"
-          value={nuevoEquipo.nombre}
-          onChange={(e) => setNuevoEquipo({ ...nuevoEquipo, nombre: e.target.value })}
-        />
-        <h4>Seleccionar jugadoras (6)</h4>
-        <select
-          multiple
-          size={6}
-          value={nuevoEquipo.jugadoras}
-          onChange={(e) =>
-            setNuevoEquipo({
-              ...nuevoEquipo,
-              jugadoras: Array.from(e.target.selectedOptions, (opt) => opt.value),
-            })
-          }
-        >
-          {jugadorasBase.map((j) => (
-            <option key={j.nombre} value={j.nombre}>
-              {j.nombre} ({j.posiciones.join("/")})
-            </option>
-          ))}
-        </select>
-        <button disabled={nuevoEquipo.jugadoras.length !== 6} onClick={crearEquipo}>
-          ✅ Crear equipo
-        </button>
-      </Panel>
-    </Container>
+          <ul>{historial.map((p, i) => <li key={i}>{p}</li>)}</ul>
+        </div>
+        <div>
+          <h4>Suplentes</h4>
+          <select onChange={(e) => agregarSuplente(e.target.value)}>
+            <option value="">Seleccionar suplente</option>
+            {suplentes.map(s => <option key={s.nombre}>{s.nombre}</option>)}
+          </select>
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
-export default Simulacion;
-
-// Styled Components
-const Container = styled.div`
-  display: flex;
-  gap: 2rem;
-  padding: 2rem;
-`;
-
-const Cancha = styled.div`
-  display: grid;
-  grid-template-areas:
-    "4 3 2"
-    "5 6 1";
-  gap: 0.5rem;
-  width: 400px;
-  height: 300px;
-`;
-
-const Zona = styled.div<{ area: string }>`
-  grid-area: ${(props) => props.area};
-  background: #f0f0f0;
-  border: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-`;
-
-const JugadoraCard = styled.div`
-  background: #fff;
-  border: 1px solid #999;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  text-align: center;
-`;
-
-const Panel = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const Historial = styled.div`
-  background: #fafafa;
-  border: 1px solid #ddd;
-  padding: 1rem;
-`;
-
-const Marcador = styled.div`
-  display: flex;
-  justify-content: space-between;
-  font-size: 1.2rem;
-  font-weight: bold;
-`;
 
 
