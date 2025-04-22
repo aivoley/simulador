@@ -1,5 +1,4 @@
 import { useState } from "react";
-import './styles.css'; 
 
 // Datos base
 const jugadorasBase = [
@@ -21,7 +20,7 @@ const jugadorasBase = [
   { nombre: "Agustina", posiciones: ["Punta"] },
 ];
 
-export default function Simulador() {
+export default function Simulacion() {
   const [formacion, setFormacion] = useState(jugadorasBase.slice(0, 6));
   const [suplentes, setSuplentes] = useState(jugadorasBase.slice(6));
   const [rotacion, setRotacion] = useState(0);
@@ -42,19 +41,21 @@ export default function Simulador() {
     { area: "z2", nombre: "Zona 2" },
   ];
 
+  // Rotación de jugadoras (1 → 6 → 5 → 4 → 3 → 2 → 1)
   const rotar = () => {
-    const nueva = [
-      formacion[5], // 2 → 1
-      formacion[0], // 1 → 6
-      formacion[1], // 6 → 5
-      formacion[2], // 5 → 4
-      formacion[3], // 4 → 3
-      formacion[4], // 3 → 2
+    const nuevaFormacion = [
+      formacion[1], // 1 → 6
+      formacion[5], // 6 → 5
+      formacion[0], // 5 → 4
+      formacion[4], // 4 → 3
+      formacion[3], // 3 → 2
+      formacion[2], // 2 → 1
     ];
-    setFormacion(nueva);
+    setFormacion(nuevaFormacion);
     setRotacion((r) => (r + 1) % 6);
   };
 
+  // Registrar punto ganado o perdido
   const registrarPunto = (resultado: "ganado" | "perdido") => {
     const descripcion = resultado === "ganado"
       ? `✔ ${puntosSet[0] + 1}-${puntosSet[1]}: ${motivoGanado} ${jugadoraGanadora ?? ""}`
@@ -67,6 +68,7 @@ export default function Simulador() {
     setJugadoraGanadora(null);
   };
 
+  // Generar rotación aleatoria
   const generarRotacion = () => {
     const mezcladas = [...jugadorasBase].sort(() => 0.5 - Math.random()).slice(0, 6);
     setFormacion(mezcladas);
@@ -75,26 +77,30 @@ export default function Simulador() {
     setHistorial([]);
   };
 
+  // Cambiar jugadora en una zona
   const cambiarJugadora = (zona: number, nueva: string) => {
-    const index = formacion.findIndex(j => j.nombre === nueva);
-    if (index === -1) {
-      const nuevaJugadora = jugadorasBase.find(j => j.nombre === nueva);
+    const index = suplentes.findIndex(j => j.nombre === nueva);
+    if (index !== -1) {
+      // Se encuentra la suplente y se cambia con la jugadora de la cancha
+      const suplente = suplentes[index];
       const nuevaFormacion = [...formacion];
-      if (nuevaJugadora) nuevaFormacion[zona] = nuevaJugadora;
+      nuevaFormacion[zona] = suplente;
       setFormacion(nuevaFormacion);
-      // Actualizar suplentes después de cambiar
-      setSuplentes(suplentes.filter(s => s.nombre !== nueva));
+
+      // Actualizar suplentes después de realizar el cambio
+      setSuplentes(suplentes.filter((s, i) => i !== index));
     }
   };
 
+  // Agregar jugadora al banco de suplentes
   const agregarSuplente = (jugadora: string) => {
     const index = formacion.findIndex(j => j.nombre === jugadora);
     if (index !== -1) {
       const jugadoraQueSale = formacion[index];
-      setSuplentes([...suplentes, jugadoraQueSale]);
+      setSuplentes([...suplentes, jugadoraQueSale]); // Agregar a la suplente
       const nuevaFormacion = [...formacion];
       nuevaFormacion[index] = jugadorasBase.find(j => j.nombre === jugadora) ?? nuevaFormacion[index];
-      setFormacion(nuevaFormacion);
+      setFormacion(nuevaFormacion); // Reemplazar la jugadora en la cancha
     }
   };
 
@@ -106,6 +112,10 @@ export default function Simulador() {
             <div className="jugadora-card">
               <div>{formacion[idx]?.nombre}</div>
               <small>{formacion[idx]?.posiciones.join("/")}</small>
+              <select onChange={(e) => cambiarJugadora(idx, e.target.value)}>
+                <option value="">Seleccionar Suplente</option>
+                {suplentes.map(s => <option key={s.nombre} value={s.nombre}>{s.nombre}</option>)}
+              </select>
             </div>
           </div>
         ))}
@@ -142,13 +152,10 @@ export default function Simulador() {
           <h4>Suplentes</h4>
           <select onChange={(e) => agregarSuplente(e.target.value)}>
             <option value="">Seleccionar suplente</option>
-            {suplentes.map(s => <option key={s.nombre}>{s.nombre}</option>)}
+            {suplentes.map(s => <option key={s.nombre} value={s.nombre}>{s.nombre}</option>)}
           </select>
         </div>
       </div>
     </div>
   );
 }
-
-
-
