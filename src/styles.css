@@ -1,0 +1,47 @@
+/* styles.css */
+
+.container {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+}
+
+.cancha {
+  flex: 2;
+  display: grid;
+  grid-template-areas:
+    "z4 z3 z2"
+    "z5 z6 z1";
+  gap: 10px;
+  padding: 30px;
+}
+
+.zona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid green;
+  border-radius: 8px;
+  background: #f8fff3;
+  font-weight: bold;
+}
+
+.jugadora-card {
+  background: white;
+  border-radius: 8px;
+  padding: 5px 10px;
+  text-align: center;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.panel {
+  flex: 1;
+  padding: 20px;
+  background: white;
+  border-left: 2px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
